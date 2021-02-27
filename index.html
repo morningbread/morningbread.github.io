@@ -170,7 +170,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-02-27 19:52:23 / 修改时间：20:00:45" itemprop="dateCreated datePublished" datetime="2021-02-27T19:52:23+08:00">2021-02-27</time>
+              <time title="创建时间：2021-02-27 19:52:23 / 修改时间：21:24:17" itemprop="dateCreated datePublished" datetime="2021-02-27T19:52:23+08:00">2021-02-27</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -222,7 +222,7 @@
 <h2 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h2><h3 id="漏洞简介"><a href="#漏洞简介" class="headerlink" title="漏洞简介"></a>漏洞简介</h3><p>CVE-2015-5165是RTL8139网卡在发送数据的时候，由于整数溢出导致的信息泄漏漏洞，通过这个漏洞可以泄漏出qemu进程的基地址，堆起始地址等信息。具体来说，漏洞点在<code>hw/net/rtl8139.c</code>的<code>2181</code>行<code>ip_data_len = be16_to_cpu(ip-&gt;ip_len) - hlen;</code>这里的hlen是int类型，ip_data_len和ip-&gt;ip_len都是uint16类型，当hlen大于ip-&gt;len的时候，ip_data_len就会向下溢出，变成一个很大的数值。后面信息发送的时候跟这个数值有关，可以越界发送出额外的内存信息。</p>
 <h3 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h3><p>这个漏洞POC构造主要需要利用计算机网络的知识。需要我们自己构造链路层的以太帧包，网络层的IP包，传输层的TCP包。</p>
 <h4 id="Ethernet-Frame-Format"><a href="#Ethernet-Frame-Format" class="headerlink" title="Ethernet Frame Format"></a>Ethernet Frame Format</h4><p>以太网帧（Ethernet Frame）在数据链路层传输，格式参考下图中的灰色部分</p>
-<p><img src="ethernet-frame.png" alt="ethernet-frame"></p>
+<p><img src="/2021/02/27/QEMU%E4%BF%A1%E6%81%AF%E6%B3%84%E6%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90-CVE-2015-5165/ethernet-frame.png" alt="ethernet-frame"></p>
 <p>相关字段解释：</p>
 <ul>
 <li>DST / SRC 为目标 / 源的 MAC 地址</li>
@@ -234,7 +234,7 @@
 <li>Payload 的 MTU（Maximum Transmission Unit）为 <code>1500</code> 字节，当数据超出 MTU 时需要进行分片处理</li>
 </ul>
 <h4 id="IP-Packet-Format"><a href="#IP-Packet-Format" class="headerlink" title="IP Packet Format"></a>IP Packet Format</h4><p>IP 数据包（这里指 IPv4）在网络层传输，格式参考下图</p>
-<p><img src="ip-packet.png" alt="ip-packet"></p>
+<p><img src="/2021/02/27/QEMU%E4%BF%A1%E6%81%AF%E6%B3%84%E6%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90-CVE-2015-5165/ip-packet.png" alt="ip-packet"></p>
 <p>相关字段解释：</p>
 <ul>
 <li>IHL（Internet Header Length）表示 IP Header 的长度，最大可以是 <code>0b1111 * 4 = 60</code> 字节</li>
@@ -245,7 +245,7 @@
 </li>
 </ul>
 <h4 id="TCP-Segment-Format"><a href="#TCP-Segment-Format" class="headerlink" title="TCP Segment Format"></a>TCP Segment Format</h4><p>TCP 报文在传输层传输，格式参考下图</p>
-<p><img src="tcp-segment.png" alt="tcp-segment"></p>
+<p><img src="/2021/02/27/QEMU%E4%BF%A1%E6%81%AF%E6%B3%84%E6%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90-CVE-2015-5165/tcp-segment.png" alt="tcp-segment"></p>
 <p>和 IP 数据包一样，TCP 报文头部的长度由 <code>Header Length</code> 字段指明，最大可以是 <code>0b1111 * 4 = 60</code> 字节，在 <code>Options</code> 字段为空的情况下头部长度为 <code>20</code> 字节。</p>
 <h3 id="漏洞代码分析"><a href="#漏洞代码分析" class="headerlink" title="漏洞代码分析"></a>漏洞代码分析</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* ip packet header */</span></span><br><span class="line">ip_header *ip = <span class="literal">NULL</span>;</span><br><span class="line"><span class="keyword">int</span> hlen = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">uint8_t</span>  ip_protocol = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">uint16_t</span> ip_data_len = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">uint8_t</span> *eth_payload_data = <span class="literal">NULL</span>;</span><br><span class="line"><span class="keyword">size_t</span>   eth_payload_len  = <span class="number">0</span>;</span><br><span class="line"><span class="comment">//这里saved_buffer指向Ethernet Frame的头部</span></span><br><span class="line"><span class="keyword">int</span> proto = be16_to_cpu(*(<span class="keyword">uint16_t</span> *)(saved_buffer + <span class="number">12</span>));</span><br><span class="line"><span class="keyword">if</span> (proto == ETH_P_IP)</span><br><span class="line">&#123;</span><br><span class="line">  DPRINTF(<span class="string">&quot;+++ C+ mode has IP packet\n&quot;</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* not aligned */</span></span><br><span class="line">  eth_payload_data = saved_buffer + ETH_HLEN;		<span class="comment">//payload数据</span></span><br><span class="line">  eth_payload_len  = saved_size   - ETH_HLEN;		<span class="comment">//payload长度</span></span><br><span class="line"></span><br><span class="line">  ip = (ip_header*)eth_payload_data;	<span class="comment">//指向ip包的头</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (IP_HEADER_VERSION(ip) != IP_HEADER_VERSION_4) &#123;</span><br><span class="line">    DPRINTF(<span class="string">&quot;+++ C+ mode packet has bad IP version %d &quot;</span></span><br><span class="line">            <span class="string">&quot;expected %d\n&quot;</span>, IP_HEADER_VERSION(ip),</span><br><span class="line">            IP_HEADER_VERSION_4);</span><br><span class="line">    ip = <span class="literal">NULL</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    hlen = IP_HEADER_LENGTH(ip);		<span class="comment">//ip包头部长度</span></span><br><span class="line">    ip_protocol = ip-&gt;ip_p;</span><br><span class="line">    ip_data_len = be16_to_cpu(ip-&gt;ip_len) - hlen;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -280,7 +280,7 @@
 <li>TxPoll：让网卡检查 Tx descriptors</li>
 </ul>
 <p>关于 <code>Descriptor</code> 的定义，同样可以参考厂商 Realtek 提供的 Datasheet 手册，下图为 <code>Transmit Descriptor</code> 的定义：</p>
-<p><img src="transmit-descriptor.png" alt="transmit-descriptor"></p>
+<p><img src="/2021/02/27/QEMU%E4%BF%A1%E6%81%AF%E6%B3%84%E6%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90-CVE-2015-5165/transmit-descriptor.png" alt="transmit-descriptor"></p>
 <p>Phrack 文章给出的结构体的定义如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">rtl8139_desc</span> &#123;</span></span><br><span class="line">    <span class="keyword">uint32_t</span> dw0;</span><br><span class="line">    <span class="keyword">uint32_t</span> dw1;</span><br><span class="line">    <span class="keyword">uint32_t</span> buf_lo;</span><br><span class="line">    <span class="keyword">uint32_t</span> buf_hi;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
@@ -450,9 +450,8 @@
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-            <a href="/categories/">
         <span class="site-state-item-count">1</span>
-        <span class="site-state-item-name">分类</span></a>
+        <span class="site-state-item-name">分类</span>
       </div>
   </nav>
 </div>
