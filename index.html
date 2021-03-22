@@ -72,7 +72,9 @@
   </style>
 </noscript>
 
-</head>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+<!-- hexo injector head_end end --></head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
@@ -141,6 +143,100 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://morningbread.github.io/2021/03/16/AFL%E5%AE%89%E8%A3%85%E4%B8%8E%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="coco">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="coco's blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/03/16/AFL%E5%AE%89%E8%A3%85%E4%B8%8E%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/" class="post-title-link" itemprop="url">AFL安装与简单使用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-16 10:25:46" itemprop="dateCreated datePublished" datetime="2021-03-16T10:25:46+08:00">2021-03-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-22 20:37:23" itemprop="dateModified" datetime="2021-03-22T20:37:23+08:00">2021-03-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fuzz/" itemprop="url" rel="index"><span itemprop="name">fuzz</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="AFL安装"><a href="#AFL安装" class="headerlink" title="AFL安装"></a>AFL安装</h2><p>在github上下载AFL的最新代码，在源代码目录下，进行安装</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<p>如果程序要从stdin中获取输入，则使用以下的命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">afl-fuzz -i testcase_dir -o findings_dir -- \</span><br><span class="line">     /path/to/tested/program [...program<span class="string">&#x27;s cmdline...]</span></span><br></pre></td></tr></table></figure>
+
+<p>如果程序是从文件中获取输入，则使用以下的命令，其中@@为占位符，AFL会自动用输入的文件名进行替换。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">afl-fuzz -i testcase_dir -o findings_dir -- \</span><br><span class="line">     /path/to/tested/program @@</span><br></pre></td></tr></table></figure>
+
+<h2 id="Example-of-AFL"><a href="#Example-of-AFL" class="headerlink" title="Example of AFL"></a>Example of AFL</h2><p>这里用libtiff当作开始fuzz的一个例子。</p>
+<h3 id="安装libtiff"><a href="#安装libtiff" class="headerlink" title="安装libtiff"></a>安装libtiff</h3><p>下载libtiff的源码，用afl-gcc进行编译。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CC=/usr/<span class="built_in">local</span>/bin/afl-gcc CXX=/usr/<span class="built_in">local</span>/bin/afl-g++ ./configure --disable-shared</span><br><span class="line">make clean</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+
+<p>编译完成之后，可执行文件在tools文件夹中。</p>
+<h3 id="开始fuzz"><a href="#开始fuzz" class="headerlink" title="开始fuzz"></a>开始fuzz</h3><p>现在准备对libtiff的tools文件夹中的tiff2bw二进制程序进行fuzz。首先新建两个目录，分别用来存放输入文件和输出文件。对于这个例子的输入文件，AFL给出了一个输入的demo，<a target="_blank" rel="noopener" href="https://lcamtuf.coredump.cx/afl/demo/%E3%80%82%E5%B0%86%60tiff/full/images%60">https://lcamtuf.coredump.cx/afl/demo/。将`tiff\full\images`</a> 目录下的文件复制到 tiff_input 中，最后运行 afl-fuzz 进行测试。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">afl-fuzz -i tiff_input/ -o tiff_output/ -- ~/tools/libtiff/tools/tiff2bw @@ /dev/null</span><br></pre></td></tr></table></figure>
+
+<p>最后的/dev/null使得错误信息不会输出到屏幕。</p>
+<p>使用afl fuzz的时候需要root权限来修改一个文件，否则会提示可能漏掉一些crash。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo bash -c  <span class="string">&#x27;echo core &gt;/proc/sys/kernel/core_pattern&#x27;</span></span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -582,12 +678,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">分类</span>
       </div>
   </nav>
@@ -671,6 +767,61 @@
 
 
   
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
