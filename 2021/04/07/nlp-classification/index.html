@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"morningbread.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="最近的项目里面用到了NLP技术来处理文本分类问题，复习一下几个比较经典的文本分类模型。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基础NLP分类模型">
+<meta property="og:url" content="https://morningbread.github.io/2021/04/07/nlp-classification/index.html">
+<meta property="og:site_name" content="coco&#39;s blog">
+<meta property="og:description" content="最近的项目里面用到了NLP技术来处理文本分类问题，复习一下几个比较经典的文本分类模型。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-04-07T11:25:22.000Z">
+<meta property="article:modified_time" content="2021-04-07T12:16:42.714Z">
+<meta property="article:author" content="coco">
+<meta property="article:tag" content="NLP classification">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://morningbread.github.io/2021/04/07/nlp-classification/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>基础NLP分类模型 | coco's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">coco's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://morningbread.github.io/2021/04/07/nlp-classification/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="coco">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="coco's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          基础NLP分类模型
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-04-07 19:25:22 / 修改时间：20:16:42" itemprop="dateCreated datePublished" datetime="2021-04-07T19:25:22+08:00">2021-04-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/NLP/" itemprop="url" rel="index"><span itemprop="name">NLP</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>最近的项目里面用到了NLP技术来处理文本分类问题，复习一下几个比较经典的文本分类模型。</p>
+<span id="more"></span>
+
+<h2 id="TextCNN"><a href="#TextCNN" class="headerlink" title="TextCNN"></a>TextCNN</h2><p>TextCNN出自Yoon Kim的论文<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1408.5882">Convolutional Neural Networks for Sentence Classification</a>，这篇论文首次将卷积神经网络运用到了文本分类任务中，用不同大小的卷积核来将二维的文本矩阵映射为一系列的向量，再采用max-over-time pooling来把这一系列的向量构成一个向量，最后再接上一个全连接神经网络输出最后的分类label。下面是论文里对整个框架描述的一个流程图</p>
+<p>![textcnn frame](textcnn frame.png)</p>
+<p>具体来说，首先把一段文本形成一个二维n*k的矩阵，其中n代表这个文本的长度，注意为了训练时候的统一，对于文本长度超过n的进行截断，对于文本长度小于n的，进行填0补全。k代表word embedding的维度。</p>
+<p>然后，采用不同大小的卷积核心，文章中用的是3*k，4*k，5*k的卷积核，其中一个维度是k意味着用这个卷积核处理过的二维矩阵，都会变成一个一维的向量，并且在文章中每一种大小的卷积核都会有100的深度，即会生成总共3*100个一维向量（当然注意到这写向量长度不一样，不同大小的卷积核会产生不同的向量长度）。</p>
+<p>对上述每一个一维向量都采用max-over-time pooling，这种池化方法只在一个一维向量中挑选出最大的数据。每一个一维向量都生成了一个标量，再把所有标量拼接起来，形成一个300维的向量，最后经过全连接网络，输出label向量。</p>
+<p>下面是用pytorch实现的TextCNN代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Config</span>():</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, embed_pretrained=<span class="literal">True</span></span>):</span></span><br><span class="line">        self.model_name = <span class="string">&quot;TextCNN&quot;</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> embed_pretrained:</span><br><span class="line">            self.embed_pretrained = <span class="literal">True</span></span><br><span class="line">            self.vocab_size, self.embed_size, self.weight = load_wv(get_weight=<span class="literal">True</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            self.embed_pretrained = <span class="literal">False</span></span><br><span class="line">            self.vocab_size = <span class="number">300000</span></span><br><span class="line">            self.embed_size = <span class="number">100</span></span><br><span class="line"></span><br><span class="line">        self.label_num = <span class="number">3</span></span><br><span class="line">        self.func_name_max_size = <span class="number">8</span></span><br><span class="line">        self.sentence_max_size = <span class="number">1445</span>    <span class="comment"># 现有path中最长长度为1445</span></span><br><span class="line">        self.output_channel = <span class="number">300</span></span><br><span class="line"></span><br><span class="line">        self.dropout = <span class="number">0.5</span></span><br><span class="line">            </span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TextCNN</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(TextCNN, self).__init__()</span><br><span class="line">        config = Config()</span><br><span class="line">        self.config = config</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> config.embed_pretrained:</span><br><span class="line">            self.embed = nn.Embedding.from_pretrained(config.weight, freeze=<span class="literal">False</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            self.embed = nn.Embedding(config.vocab_size, config.embed_size)</span><br><span class="line"></span><br><span class="line">        self.conv3 = nn.Conv2d(<span class="number">1</span>, config.output_channel, (<span class="number">3</span>, config.embed_size))</span><br><span class="line">        self.conv4 = nn.Conv2d(<span class="number">1</span>, config.output_channel, (<span class="number">4</span>, config.embed_size))</span><br><span class="line">        self.conv5 = nn.Conv2d(<span class="number">1</span>, config.output_channel, (<span class="number">5</span>, config.embed_size))</span><br><span class="line"></span><br><span class="line">        self.max3_pool = nn.MaxPool2d((config.sentence_max_size-<span class="number">3</span>+<span class="number">1</span>, <span class="number">1</span>))</span><br><span class="line">        self.max4_pool = nn.MaxPool2d((config.sentence_max_size-<span class="number">4</span>+<span class="number">1</span>, <span class="number">1</span>))</span><br><span class="line">        self.max5_pool = nn.MaxPool2d((config.sentence_max_size-<span class="number">5</span>+<span class="number">1</span>, <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">        self.dropout = nn.Dropout(config.dropout)</span><br><span class="line">        self.linear = nn.Linear(<span class="number">2</span> * <span class="number">3</span> * config.output_channel, config.label_num)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">conv_and_pool</span>(<span class="params">self, x, conv, max_pool</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        :param x: [batch_size, 1, sequence_length, word_embed]</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        x = conv(x)  <span class="comment"># [batch_size, output_channel, output_length, 1]</span></span><br><span class="line">        x = F.relu(x)</span><br><span class="line">        x = max_pool(x)</span><br><span class="line">        x = x.squeeze(<span class="number">2</span>)</span><br><span class="line">        x = x.squeeze(<span class="number">2</span>)    <span class="comment"># [batch_size, out_channel]</span></span><br><span class="line">        <span class="keyword">return</span> x</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x: torch.Tensor</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        :param x: [batch_size, sequence_length]</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        x = self.embed(x)   <span class="comment"># [batch_size, sequence_length, word_embed]</span></span><br><span class="line">        x = x.unsqueeze(<span class="number">1</span>)  <span class="comment"># [batch_size, channel, sequence_length, word_embed]</span></span><br><span class="line"></span><br><span class="line">        x1 = self.conv_and_pool(x, self.conv3, self.max3_pool)</span><br><span class="line">        x2 = self.conv_and_pool(x, self.conv4, self.max4_pool)</span><br><span class="line">        x3 = self.conv_and_pool(x, self.conv5, self.max5_pool)</span><br><span class="line"></span><br><span class="line">        x = torch.cat((x1, x2, x3), <span class="number">1</span>)</span><br><span class="line">        </span><br><span class="line">        output = self.dropout(x)</span><br><span class="line">        output = self.linear(output)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> x</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hierarchical-Attention-Neural-Network"><a href="#Hierarchical-Attention-Neural-Network" class="headerlink" title="Hierarchical Attention Neural Network"></a>Hierarchical Attention Neural Network</h2><p>Hierarchical Attention Neural Network (HAN) 出自Zichao Yang的论文<a href="https://link.zhihu.com/?target=https://www.cs.cmu.edu/~diyiy/docs/naacl16.pdf">Hierarchical Attention Networks for Document Classification</a>，这篇论文有两个亮点：</p>
+<ol>
+<li>提出了一个层级模型，从word-sentence-document来表示一篇文本。</li>
+<li>在word-sentence和sentence-document的时候，采用了attention机制，attention机制的好处在于可以给不同的word/sentence以不同的权重，这里的insight在于对于一个分类问题，每一个word在sentence中的作用以及每一个sentence在document中的作用是不同的</li>
+</ol>
+<p>下图为模型的整体框架：</p>
+<p>![han frame](han frame.png)</p>
+<ol>
+<li>word encoder: 在论文中这层用的是一个双向GRU，每一个word embedding经过这层之后，都得到了一个新的向量表示。</li>
+<li>word attention:  经过word encoder后，每一个word的新的向量乘上一个attention矩阵，得到一个attention向量，这个向量和一个上下文向量点乘，得到这个word的attention系数，之后对于一个句子中的每一个word，由word encoder后得到的向量与attention系数加权和得到这个句子的向量表示。</li>
+<li>sentence encoder &amp; sentence attention，同样的步骤对sentence也做一遍，最后就能得到文档的向量表示。</li>
+<li>最后街上一个全连接神经网络得到label向量。</li>
+</ol>
+<p>HAN模型的代码由于较多，就暂时不放上来了。根据上述的思路也是比较好实现的。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/NLP-classification/" rel="tag"># NLP classification</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/07/llvm-pass/" rel="prev" title="LLVM PASS学习">
+      <i class="fa fa-chevron-left"></i> LLVM PASS学习
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#TextCNN"><span class="nav-number">1.</span> <span class="nav-text">TextCNN</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hierarchical-Attention-Neural-Network"><span class="nav-number">2.</span> <span class="nav-text">Hierarchical Attention Neural Network</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">coco</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">coco</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
