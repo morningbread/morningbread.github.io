@@ -27,11 +27,14 @@
 <meta property="og:site_name" content="coco&#39;s blog">
 <meta property="og:description" content="最近的项目里面用到了NLP技术来处理文本分类问题，复习一下几个比较经典的文本分类模型。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://morningbread.github.io/2021/04/07/nlp-classification/textcnn_frame.png">
+<meta property="og:image" content="https://morningbread.github.io/2021/04/07/nlp-classification/han_frame.png">
 <meta property="article:published_time" content="2021-04-07T11:25:22.000Z">
-<meta property="article:modified_time" content="2021-04-07T12:16:42.714Z">
+<meta property="article:modified_time" content="2021-04-09T02:06:28.584Z">
 <meta property="article:author" content="coco">
 <meta property="article:tag" content="NLP classification">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://morningbread.github.io/2021/04/07/nlp-classification/textcnn_frame.png">
 
 <link rel="canonical" href="https://morningbread.github.io/2021/04/07/nlp-classification/">
 
@@ -180,10 +183,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-04-07 19:25:22 / 修改时间：20:16:42" itemprop="dateCreated datePublished" datetime="2021-04-07T19:25:22+08:00">2021-04-07</time>
+              <time title="创建时间：2021-04-07 19:25:22" itemprop="dateCreated datePublished" datetime="2021-04-07T19:25:22+08:00">2021-04-07</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-04-09 10:06:28" itemprop="dateModified" datetime="2021-04-09T10:06:28+08:00">2021-04-09</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -209,7 +218,7 @@
 <span id="more"></span>
 
 <h2 id="TextCNN"><a href="#TextCNN" class="headerlink" title="TextCNN"></a>TextCNN</h2><p>TextCNN出自Yoon Kim的论文<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1408.5882">Convolutional Neural Networks for Sentence Classification</a>，这篇论文首次将卷积神经网络运用到了文本分类任务中，用不同大小的卷积核来将二维的文本矩阵映射为一系列的向量，再采用max-over-time pooling来把这一系列的向量构成一个向量，最后再接上一个全连接神经网络输出最后的分类label。下面是论文里对整个框架描述的一个流程图</p>
-<p>![textcnn frame](textcnn frame.png)</p>
+<p><img src="/2021/04/07/nlp-classification/textcnn_frame.png" alt="textcnn frame"></p>
 <p>具体来说，首先把一段文本形成一个二维n*k的矩阵，其中n代表这个文本的长度，注意为了训练时候的统一，对于文本长度超过n的进行截断，对于文本长度小于n的，进行填0补全。k代表word embedding的维度。</p>
 <p>然后，采用不同大小的卷积核心，文章中用的是3*k，4*k，5*k的卷积核，其中一个维度是k意味着用这个卷积核处理过的二维矩阵，都会变成一个一维的向量，并且在文章中每一种大小的卷积核都会有100的深度，即会生成总共3*100个一维向量（当然注意到这写向量长度不一样，不同大小的卷积核会产生不同的向量长度）。</p>
 <p>对上述每一个一维向量都采用max-over-time pooling，这种池化方法只在一个一维向量中挑选出最大的数据。每一个一维向量都生成了一个标量，再把所有标量拼接起来，形成一个300维的向量，最后经过全连接网络，输出label向量。</p>
@@ -222,7 +231,7 @@
 <li>在word-sentence和sentence-document的时候，采用了attention机制，attention机制的好处在于可以给不同的word/sentence以不同的权重，这里的insight在于对于一个分类问题，每一个word在sentence中的作用以及每一个sentence在document中的作用是不同的</li>
 </ol>
 <p>下图为模型的整体框架：</p>
-<p>![han frame](han frame.png)</p>
+<p><img src="/2021/04/07/nlp-classification/han_frame.png" alt="han frame"></p>
 <ol>
 <li>word encoder: 在论文中这层用的是一个双向GRU，每一个word embedding经过这层之后，都得到了一个新的向量表示。</li>
 <li>word attention:  经过word encoder后，每一个word的新的向量乘上一个attention矩阵，得到一个attention向量，这个向量和一个上下文向量点乘，得到这个word的attention系数，之后对于一个句子中的每一个word，由word encoder后得到的向量与attention系数加权和得到这个句子的向量表示。</li>
